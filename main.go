@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 
@@ -79,8 +78,8 @@ func replaceChain(newBlocks []Block) {
 
 func run() error {
 	mux := makeMuxRouter()
-	httpAddr := os.Getenv("ADDR")
-	log.Println("Listening on ", os.Getenv("ADDR"))
+	httpAddr := "3000"
+	log.Println("Listening on 3000")
 
 	s := &http.Server{
 		Addr:           ":" + httpAddr,
@@ -93,7 +92,6 @@ func run() error {
 	if err := s.ListenAndServe(); err != nil {
 		return err
 	}
-
 	return nil
 }
 
