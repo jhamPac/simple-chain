@@ -10,6 +10,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 )
 
@@ -24,6 +25,11 @@ type Block struct {
 
 // Blockchain represents a simulated BC
 var Blockchain []Block
+
+// Message for capturing the BPM
+type Message struct {
+	BPM int
+}
 
 func calculateHash(block Block) string {
 	record := string(block.Index) + block.Timestamp + string(block.BPM) + block.PrevHash
@@ -103,6 +109,32 @@ func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	io.WriteString(w, string(bytes))
+}
+
+func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
+	var m Message
+	lastBlock := Blockchain[len(Blockchain)-1]
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&m); err != nil {
+		respondWithJSON(w, r, http.StatusBadRequest, r.Body)
+		return
+	}
+	defer r.Body.Close()
+
+	newBlock, err := generateBlock(lastBlock, m.BPM)
+	if err != nil {
+		respondWithJSON(w, r, http.StatusInternalServerError, m)
+		return
+	}
+
+	if isBlockValid(newBlock, lastBlock) {
+		newBlockchain := append(Blockchain, newBlock)
+		replaceChain(newBlockchain)
+		spew.Dump(Blockchain)
+	}
+
+	respondWithJSON(w, r, http.StatusCreated, newBlock)
 }
 
 func main() {
