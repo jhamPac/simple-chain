@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"crypto/sha256"
 	"encoding/hex"
+	"io"
 	"log"
 	"net"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
@@ -77,6 +80,35 @@ func replaceChain(newBlocks []Block) {
 
 func handleConn(conn net.Conn) {
 	defer conn.Close()
+
+	io.WriteString(conn, "Enter a BPM")
+
+	scanner := bufio.NewScanner(conn)
+
+	go func() {
+		for scanner.Scan() {
+			lastBlock := Blockchain[len(Blockchain)-1]
+			bpm, err := strconv.Atoi(scanner.Text())
+			if err != nil {
+				log.Printf("%v not a number: %v", scanner.Text(), err)
+				continue
+			}
+
+			newBlock, err := generateBlock(lastBlock, bpm)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			if isBlockValid(newBlock, lastBlock) {
+				newBlockchain := append(Blockchain, newBlock)
+				replaceChain(newBlockchain)
+			}
+
+			bcServer <- Blockchain
+			io.WriteString(conn, "\nEnter a new BPM")
+		}
+	}()
 }
 
 func main() {
