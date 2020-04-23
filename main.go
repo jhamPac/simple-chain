@@ -8,7 +8,6 @@ import (
 	"io"
 	"log"
 	"net"
-	"os"
 	"strconv"
 	"time"
 
@@ -82,7 +81,7 @@ func replaceChain(newBlocks []Block) {
 func handleConn(conn net.Conn) {
 	defer conn.Close()
 
-	io.WriteString(conn, "Enter a BPM")
+	io.WriteString(conn, "Enter a BPM ")
 
 	scanner := bufio.NewScanner(conn)
 
@@ -107,7 +106,7 @@ func handleConn(conn net.Conn) {
 			}
 
 			bcServer <- Blockchain
-			io.WriteString(conn, "\nEnter a new BPM")
+			io.WriteString(conn, "\nEnter a new BPM ")
 		}
 	}()
 
@@ -140,7 +139,7 @@ func main() {
 	spew.Dump(genesisBlock)
 	Blockchain = append(Blockchain, genesisBlock)
 
-	server, err := net.Listen("tcp", ":"+os.Getenv("Port"))
+	server, err := net.Listen("tcp", "127.0.0.1:9000")
 	if err != nil {
 		log.Fatal(err)
 	}
