@@ -18,6 +18,8 @@ type Block struct {
 // Blockchain represents a simulated BC
 var Blockchain []Block
 
+var bcServer chan []Block
+
 // Message for capturing the BPM
 type Message struct {
 	BPM int
