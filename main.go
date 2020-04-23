@@ -3,7 +3,13 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"log"
+	"net"
+	"os"
 	"time"
+
+	"github.com/davecgh/go-spew/spew"
+	"github.com/joho/godotenv"
 )
 
 // Block in the chain
@@ -70,5 +76,21 @@ func replaceChain(newBlocks []Block) {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	bcServer = make(chan []Block)
+
+	t := time.Now()
+	genesisBlock := Block{0, t.String(), 0, "", ""}
+	spew.Dump(genesisBlock)
+	Blockchain = append(Blockchain, genesisBlock)
+
+	server, err := net.Listen("tcp", ":"+os.Getenv("Port"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer server.Close()
 }
