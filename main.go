@@ -75,6 +75,10 @@ func replaceChain(newBlocks []Block) {
 	}
 }
 
+func handleConn(conn net.Conn) {
+	defer conn.Close()
+}
+
 func main() {
 	err := godotenv.Load()
 	if err != nil {
@@ -93,4 +97,12 @@ func main() {
 		log.Fatal(err)
 	}
 	defer server.Close()
+
+	for {
+		conn, err := server.Accept()
+		if err != nil {
+			log.Fatal(err)
+		}
+		go handleConn(conn)
+	}
 }
