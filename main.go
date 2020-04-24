@@ -171,12 +171,27 @@ func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
 func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var m Message
+	lastBlock := Blockchain[len(Blockchain)-1]
 
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&m); err != nil {
 		respondWithJSON(w, r, http.StatusBadRequest, r.Body)
 		return
 	}
+	defer r.Body.Close()
+
+	mutex.Lock()
+	newBlock, err := generateBlock(lastBlock, m.BPM)
+	if err != nil {
+		log.Fatal("Could not generate a new block")
+	}
+	mutex.Unlock()
+
+	if isBlockValid(newBlock, lastBlock) {
+		Blockchain = append(Blockchain, newBlock)
+		spew.Dump(Blockchain)
+	}
+	respondWithJSON(w, r, http.StatusCreated, newBlock)
 }
 
 func respondWithJSON(w http.ResponseWriter, r *http.Request, code int, payload interface{}) {
