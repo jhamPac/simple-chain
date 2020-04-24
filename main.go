@@ -47,7 +47,7 @@ type Message struct {
 }
 
 func calculateHash(block Block) string {
-	record := string(block.Index) + block.Timestamp + string(block.BPM) + block.PrevHash
+	record := strconv.Itoa(block.Index) + block.Timestamp + strconv.Itoa(block.BPM) + block.PrevHash + block.Nonce
 	h := sha256.New()
 	h.Write([]byte(record))
 	hashed := h.Sum(nil)
@@ -55,7 +55,7 @@ func calculateHash(block Block) string {
 }
 
 func generateBlock(oldBlock Block, BPM int) (Block, error) {
-	var newBlock Block
+	newBlock := Block{}
 
 	t := time.Now()
 
@@ -68,14 +68,14 @@ func generateBlock(oldBlock Block, BPM int) (Block, error) {
 	for i := 0; ; i++ {
 		hex := fmt.Sprintf("%x", i)
 		newBlock.Nonce = hex
-
-		if !isHashValid(calculateHash(newBlock), newBlock.Difficulty) {
-			fmt.Println(calculateHash(newBlock), " do more work!")
+		c := calculateHash(newBlock)
+		if !isHashValid(c, newBlock.Difficulty) {
+			fmt.Println(c, " do more work!")
 			time.Sleep(time.Second)
 			continue
 		} else {
-			fmt.Println(calculateHash(newBlock), " work done!")
-			newBlock.Hash = calculateHash(newBlock)
+			fmt.Println(c, " work done!")
+			newBlock.Hash = c
 			break
 		}
 	}
