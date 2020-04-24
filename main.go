@@ -234,24 +234,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	bcServer = make(chan []Block)
+	go func() {
+		t := time.Now()
+		genesisBlock := Block{}
+		genesisBlock = Block{0, t.String(), 0, calculateHash(genesisBlock, "", difficulty, "",}
+		spew.Dump(genesisBlock)
 
-	t := time.Now()
-	genesisBlock := Block{0, t.String(), 0, "", ""}
-	spew.Dump(genesisBlock)
-	Blockchain = append(Blockchain, genesisBlock)
-
-	server, err := net.Listen("tcp", "127.0.0.1:9000")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer server.Close()
-
-	for {
-		conn, err := server.Accept()
-		if err != nil {
-			log.Fatal(err)
-		}
-		go handleConn(conn)
-	}
+		mutex.Lock()
+		Blockchain = append(Blockchain, genesisBlock)
+		mutex.Unlock()
+	}()
+	log.Fatal(run())
 }
