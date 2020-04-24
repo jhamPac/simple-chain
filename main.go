@@ -159,6 +159,28 @@ func makeMuxRouter() http.Handler {
 	return muxRouter
 }
 
+func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
+	bytes, err := json.MarshalIndent(Blockchain, "", " ")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	io.WriteString(w, string(bytes))
+}
+
+func handleWriteBlock(w http.ResponseWriter, r *http.Request) {}
+
+func respondWithJSON(w http.ResponseWriter, r *http.Request, code int, payload interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	response, err := json.MarshalIndent(payload, "", " ")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("HTTP 500: Internal Server Error"))
+	}
+	w.WriteHeader(code)
+	w.Write(response)
+}
+
 func main() {
 	err := godotenv.Load()
 	if err != nil {
