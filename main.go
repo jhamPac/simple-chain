@@ -168,7 +168,16 @@ func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, string(bytes))
 }
 
-func handleWriteBlock(w http.ResponseWriter, r *http.Request) {}
+func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var m Message
+
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&m); err != nil {
+		respondWithJSON(w, r, http.StatusBadRequest, r.Body)
+		return
+	}
+}
 
 func respondWithJSON(w http.ResponseWriter, r *http.Request, code int, payload interface{}) {
 	w.Header().Set("Content-Type", "application/json")
