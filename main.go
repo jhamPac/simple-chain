@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -18,6 +19,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 )
+
+const difficulty = 1
 
 // Block in the chain
 type Block struct {
@@ -62,6 +65,11 @@ func generateBlock(oldBlock Block, BPM int) (Block, error) {
 	newBlock.Hash = calculateHash(newBlock)
 
 	return newBlock, nil
+}
+
+func isHashValid(hash string, difficulty int) bool {
+	prefix := strings.Repeat("0", difficulty)
+	return strings.HasPrefix(hash, prefix)
 }
 
 func isBlockValid(newBlock, oldBlock Block) bool {
