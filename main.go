@@ -8,26 +8,34 @@ import (
 	"io"
 	"log"
 	"net"
+	"net/http"
+	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 )
 
 // Block in the chain
 type Block struct {
-	Index     int
-	Timestamp string
-	BPM       int
-	Hash      string
-	PrevHash  string
+	Index      int
+	Timestamp  string
+	BPM        int
+	Hash       string
+	PrevHash   string
+	Difficulty int
+	Nonce      string
 }
 
 // Blockchain represents a simulated BC
 var Blockchain []Block
 
 var bcServer chan []Block
+
+var mutex = &sync.Mutex{}
 
 // Message for capturing the BPM
 type Message struct {
@@ -124,6 +132,31 @@ func handleConn(conn net.Conn) {
 	for range bcServer {
 		spew.Dump(Blockchain)
 	}
+}
+
+func run() error {
+	mux := makeMuxRouter()
+	httpAddr := os.Getenv("PORT")
+	log.Println("Listening on ", os.Getenv("PORT"))
+	s := &http.Server{
+		Addr:           ":" + httpAddr,
+		Handler:        mux,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+
+	if err := s.ListenAndServe(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func makeMuxRouter() http.Handler {
+	muxRouter := mux.NewRouter()
+	muxRouter.HandleFunc("/", handleGetBlockchain).Methods("GET")
+	muxRouter.HandleFunc("/", handleWriteBlock).Methods("POST")
+	return muxRouter
 }
 
 func main() {
