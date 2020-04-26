@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -154,6 +155,57 @@ func handleConn(conn net.Conn) {
 		}
 		io.WriteString(conn, string(output)+"\n")
 	}
+}
+
+func pickWinner() {
+	time.Sleep(30 * time.Second)
+	mutex.Lock()
+	temp := tempBlocks
+	mutex.Unlock()
+
+	lotteryPool := []string{}
+	if len(temp) > 0 {
+	OUTER:
+		for _, block := range temp {
+
+			for _, node := range lotteryPool {
+				if block.Validator == node {
+					continue OUTER
+				}
+			}
+
+			mutex.Lock()
+			setValidators := validators
+			mutex.Unlock()
+
+			k, ok := setValidators[block.Validator]
+			if ok {
+				for i := 0; i < k; i++ {
+					lotteryPool = append(lotteryPool, block.Validator)
+				}
+			}
+
+		}
+
+		s := rand.NewSource(time.Now().Unix())
+		r := rand.New(s)
+		lotteryWinner := lotteryPool[r.Intn(len(lotteryPool))]
+
+		for _, block := range temp {
+			if block.Validator == lotteryWinner {
+				mutex.Lock()
+				Blockchain = append(Blockchain, block)
+				mutex.Unlock()
+				for range validators {
+					announcements <- "\nwinning validator: " + lotteryWinner + "\n"
+				}
+			}
+		}
+	}
+
+	mutex.Lock()
+	tempBlocks = []Block{}
+	mutex.Unlock()
 }
 
 func run() error {
