@@ -50,10 +50,14 @@ type Message struct {
 	BPM int
 }
 
-func calculateHash(block Block) string {
-	record := strconv.Itoa(block.Index) + block.Timestamp + strconv.Itoa(block.BPM) + block.PrevHash + block.Nonce
+func calculateBlockHash(block Block) string {
+	record := string(block.Index) + block.Timestamp + string(block.BPM) + block.PrevHash
+	return calculateHash(record)
+}
+
+func calculateHash(s string) string {
 	h := sha256.New()
-	h.Write([]byte(record))
+	h.Write([]byte(s))
 	hashed := h.Sum(nil)
 	return hex.EncodeToString(hashed)
 }
