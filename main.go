@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 )
 
@@ -208,65 +207,65 @@ func pickWinner() {
 	mutex.Unlock()
 }
 
-func run() error {
-	mux := makeMuxRouter()
-	httpAddr := os.Getenv("PORT")
-	log.Println("Listening on ", os.Getenv("PORT"))
-	s := &http.Server{
-		Addr:           ":" + httpAddr,
-		Handler:        mux,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		MaxHeaderBytes: 1 << 20,
-	}
+// func run() error {
+// 	mux := makeMuxRouter()
+// 	httpAddr := os.Getenv("PORT")
+// 	log.Println("Listening on ", os.Getenv("PORT"))
+// 	s := &http.Server{
+// 		Addr:           ":" + httpAddr,
+// 		Handler:        mux,
+// 		ReadTimeout:    10 * time.Second,
+// 		WriteTimeout:   10 * time.Second,
+// 		MaxHeaderBytes: 1 << 20,
+// 	}
 
-	if err := s.ListenAndServe(); err != nil {
-		return err
-	}
-	return nil
-}
+// 	if err := s.ListenAndServe(); err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
 
-func makeMuxRouter() http.Handler {
-	muxRouter := mux.NewRouter()
-	muxRouter.HandleFunc("/", handleGetBlockchain).Methods("GET")
-	muxRouter.HandleFunc("/", handleWriteBlock).Methods("POST")
-	return muxRouter
-}
+// func makeMuxRouter() http.Handler {
+// 	muxRouter := mux.NewRouter()
+// 	muxRouter.HandleFunc("/", handleGetBlockchain).Methods("GET")
+// 	muxRouter.HandleFunc("/", handleWriteBlock).Methods("POST")
+// 	return muxRouter
+// }
 
-func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
-	bytes, err := json.MarshalIndent(Blockchain, "", " ")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	io.WriteString(w, string(bytes))
-}
+// func handleGetBlockchain(w http.ResponseWriter, r *http.Request) {
+// 	bytes, err := json.MarshalIndent(Blockchain, "", " ")
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
+// 	io.WriteString(w, string(bytes))
+// }
 
-func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	var m Message
-	lastBlock := Blockchain[len(Blockchain)-1]
+// func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
+// 	w.Header().Set("Content-Type", "application/json")
+// 	var m Message
+// 	lastBlock := Blockchain[len(Blockchain)-1]
 
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&m); err != nil {
-		respondWithJSON(w, r, http.StatusBadRequest, r.Body)
-		return
-	}
-	defer r.Body.Close()
+// 	decoder := json.NewDecoder(r.Body)
+// 	if err := decoder.Decode(&m); err != nil {
+// 		respondWithJSON(w, r, http.StatusBadRequest, r.Body)
+// 		return
+// 	}
+// 	defer r.Body.Close()
 
-	mutex.Lock()
-	newBlock, err := generateBlock(lastBlock, m.BPM)
-	if err != nil {
-		log.Fatal("Could not generate a new block")
-	}
-	mutex.Unlock()
+// 	mutex.Lock()
+// 	newBlock, err := generateBlock(lastBlock, m.BPM)
+// 	if err != nil {
+// 		log.Fatal("Could not generate a new block")
+// 	}
+// 	mutex.Unlock()
 
-	if isBlockValid(newBlock, lastBlock) {
-		Blockchain = append(Blockchain, newBlock)
-		spew.Dump(Blockchain)
-	}
-	respondWithJSON(w, r, http.StatusCreated, newBlock)
-}
+// 	if isBlockValid(newBlock, lastBlock) {
+// 		Blockchain = append(Blockchain, newBlock)
+// 		spew.Dump(Blockchain)
+// 	}
+// 	respondWithJSON(w, r, http.StatusCreated, newBlock)
+// }
 
 func generateBlock(oldBlock Block, BPM int, address string) (Block, error) {
 	newBlock := Block{}
