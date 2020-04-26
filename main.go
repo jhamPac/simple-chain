@@ -34,12 +34,16 @@ type Block struct {
 	Nonce      string
 }
 
-// Blockchain represents a simulated BC
-var Blockchain []Block
-
-var bcServer chan []Block
-
-var mutex = &sync.Mutex{}
+var (
+	// Blockchain represents a simulated BC
+	Blockchain      []Block
+	tempBlocks      []Block
+	candidateBlocks = make(chan Block)
+	announcements   = make(chan string)
+	bcServer        chan []Block
+	mutex           = &sync.Mutex{}
+	validators      = make(map[string]int)
+)
 
 // Message for capturing the BPM
 type Message struct {
