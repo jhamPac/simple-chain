@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -74,7 +75,7 @@ func isBlockValid(newBlock, oldBlock Block) bool {
 		return false
 	}
 
-	if calculateHash(newBlock) != newBlock.Hash {
+	if calculateBlockHash(newBlock) != newBlock.Hash {
 		return false
 	}
 
@@ -90,48 +91,68 @@ func replaceChain(newBlocks []Block) {
 func handleConn(conn net.Conn) {
 	defer conn.Close()
 
-	io.WriteString(conn, "Enter a BPM ")
-
-	scanner := bufio.NewScanner(conn)
-
 	go func() {
-		for scanner.Scan() {
-			lastBlock := Blockchain[len(Blockchain)-1]
-			bpm, err := strconv.Atoi(scanner.Text())
-			if err != nil {
-				log.Printf("%v not a number: %v", scanner.Text(), err)
-				continue
-			}
-
-			newBlock, err := generateBlock(lastBlock, bpm)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-
-			if isBlockValid(newBlock, lastBlock) {
-				newBlockchain := append(Blockchain, newBlock)
-				replaceChain(newBlockchain)
-			}
-
-			bcServer <- Blockchain
-			io.WriteString(conn, "\nEnter a new BPM ")
+		for {
+			msg := <-announcements
+			io.WriteString(conn, msg)
 		}
 	}()
+
+	var address string
+	io.WriteString(conn, "Enter token stake:")
+	scanBalance := bufio.NewScanner(conn)
+
+	for scanBalance.Scan() {
+		balance, err := strconv.Atoi(scanBalance.Text())
+		if err != nil {
+			log.Printf("%v not a number: %v", scanBalance.Text(), err)
+			return
+		}
+		t := time.Now()
+		address = calculateHash(t.String())
+		validators[address] = balance
+		fmt.Println(validators)
+		break
+	}
+	io.WriteString(conn, "\nEnter a new BPM:")
+	scanBPM := bufio.NewScanner(conn)
 
 	go func() {
 		for {
-			time.Sleep(30 * time.Second)
-			output, err := json.Marshal(Blockchain)
-			if err != nil {
-				log.Fatal(err)
+			for scanBPM.Scan() {
+				bpm, err := strconv.Atoi(scanBPM.Text())
+				if err != nil {
+					log.Printf("%v not a number: %v", scanBPM.Text(), err)
+					delete(validators, address)
+					conn.Close()
+				}
+
+				mutex.Lock()
+				oldLastIndex := Blockchain[len(Blockchain)-1]
+				mutex.Unlock()
+
+				newBlock, err := generateBlock(oldLastIndex, bpm, address)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+				if isBlockValid(newBlock, oldLastIndex) {
+					candidateBlocks <- newBlock
+				}
+				io.WriteString(conn, "\nEnter a new BPM:")
 			}
-			io.WriteString(conn, string(output))
 		}
 	}()
 
-	for range bcServer {
-		spew.Dump(Blockchain)
+	for {
+		time.Sleep(time.Minute)
+		mutex.Lock()
+		output, err := json.Marshal(Blockchain)
+		mutex.Unlock()
+		if err != nil {
+			log.Fatal(err)
+		}
+		io.WriteString(conn, string(output)+"\n")
 	}
 }
 
