@@ -54,34 +54,6 @@ func calculateHash(block Block) string {
 	return hex.EncodeToString(hashed)
 }
 
-func generateBlock(oldBlock Block, BPM int) (Block, error) {
-	newBlock := Block{}
-
-	t := time.Now()
-
-	newBlock.Index = oldBlock.Index + 1
-	newBlock.Timestamp = t.String()
-	newBlock.BPM = BPM
-	newBlock.PrevHash = oldBlock.Hash
-	newBlock.Difficulty = difficulty
-
-	for i := 0; ; i++ {
-		hex := fmt.Sprintf("%x", i)
-		newBlock.Nonce = hex
-		c := calculateHash(newBlock)
-		if !isHashValid(c, newBlock.Difficulty) {
-			fmt.Println(c, " do more work!")
-			time.Sleep(time.Second)
-			continue
-		} else {
-			fmt.Println(c, " work done!")
-			newBlock.Hash = c
-			break
-		}
-	}
-	return newBlock, nil
-}
-
 func isHashValid(hash string, difficulty int) bool {
 	prefix := strings.Repeat("0", difficulty)
 	return strings.HasPrefix(hash, prefix)
@@ -215,6 +187,34 @@ func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 		spew.Dump(Blockchain)
 	}
 	respondWithJSON(w, r, http.StatusCreated, newBlock)
+}
+
+func generateBlock(oldBlock Block, BPM int) (Block, error) {
+	newBlock := Block{}
+
+	t := time.Now()
+
+	newBlock.Index = oldBlock.Index + 1
+	newBlock.Timestamp = t.String()
+	newBlock.BPM = BPM
+	newBlock.PrevHash = oldBlock.Hash
+	newBlock.Difficulty = difficulty
+
+	for i := 0; ; i++ {
+		hex := fmt.Sprintf("%x", i)
+		newBlock.Nonce = hex
+		c := calculateHash(newBlock)
+		if !isHashValid(c, newBlock.Difficulty) {
+			fmt.Println(c, " do more work!")
+			time.Sleep(time.Second)
+			continue
+		} else {
+			fmt.Println(c, " work done!")
+			newBlock.Hash = c
+			break
+		}
+	}
+	return newBlock, nil
 }
 
 func respondWithJSON(w http.ResponseWriter, r *http.Request, code int, payload interface{}) {
