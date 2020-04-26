@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net"
@@ -25,13 +24,12 @@ const difficulty = 1
 
 // Block in the chain
 type Block struct {
-	Index      int
-	Timestamp  string
-	BPM        int
-	Hash       string
-	PrevHash   string
-	Difficulty int
-	Nonce      string
+	Index     int
+	Timestamp string
+	BPM       int
+	Hash      string
+	PrevHash  string
+	Validator string
 }
 
 var (
@@ -197,7 +195,7 @@ func handleWriteBlock(w http.ResponseWriter, r *http.Request) {
 	respondWithJSON(w, r, http.StatusCreated, newBlock)
 }
 
-func generateBlock(oldBlock Block, BPM int) (Block, error) {
+func generateBlock(oldBlock Block, BPM int, address string) (Block, error) {
 	newBlock := Block{}
 
 	t := time.Now()
@@ -206,22 +204,9 @@ func generateBlock(oldBlock Block, BPM int) (Block, error) {
 	newBlock.Timestamp = t.String()
 	newBlock.BPM = BPM
 	newBlock.PrevHash = oldBlock.Hash
-	newBlock.Difficulty = difficulty
+	newBlock.Hash = calculateBlockHash(newBlock)
+	newBlock.Validator = address
 
-	for i := 0; ; i++ {
-		hex := fmt.Sprintf("%x", i)
-		newBlock.Nonce = hex
-		c := calculateHash(newBlock)
-		if !isHashValid(c, newBlock.Difficulty) {
-			fmt.Println(c, " do more work!")
-			time.Sleep(time.Second)
-			continue
-		} else {
-			fmt.Println(c, " work done!")
-			newBlock.Hash = c
-			break
-		}
-	}
 	return newBlock, nil
 }
 
